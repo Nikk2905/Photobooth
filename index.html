@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📸 PhotoBooth Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .filter-none { filter: none; }
+        .filter-grayscale { filter: grayscale(100%); }
+        .filter-sepia { filter: sepia(100%); }
+        .filter-blur { filter: blur(2px); }
+        .filter-brightness { filter: brightness(150%); }
+        .filter-contrast { filter: contrast(150%); }
+        .filter-vintage { filter: sepia(50%) contrast(120%) brightness(110%); }
+        .filter-cool { filter: hue-rotate(180deg) saturate(120%); }
+        
+        .photo-frame {
+            border: 8px solid white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transform: rotate(-2deg);
+            transition: transform 0.3s ease;
+        }
+        
+        .photo-frame:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+        
+        .camera-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .flash-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        .flash-animation {
+            animation: flash 0.3s ease-out;
+        }
+        
+        @keyframes flash {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 min-h-screen">
+    <div class="flash-effect" id="flashEffect"></div>
+    
+    <!-- Header -->
+    <header class="text-center py-8">
+        <h1 class="text-5xl md:text-6xl font-bold text-white mb-4">📸 PhotoBooth Studio</h1>
+        <p class="text-xl text-white/90">Capture amazing moments with style!</p>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pb-8">
+        <div class="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            
+            <!-- Camera Section -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">📷 Camera</h2>
+                    <p class="text-white/80">Strike a pose and capture the moment!</p>
+                </div>
+                
+                <!-- Video/Photo Display -->
+                <div class="relative mb-6">
+                    <video id="video" class="w-full h-64 md:h-80 object-cover rounded-2xl bg-gray-800" autoplay muted playsinline style="display: block;"></video>
+                    <canvas id="canvas" class="w-full h-64 md:h-80 object-cover rounded-2xl" style="display: none;"></canvas>
+                    
+                    <!-- Camera Controls Overlay -->
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                        <button id="captureBtn" class="camera-button w-16 h-16 rounded-full text-white text-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                            📸
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filter Controls -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-white mb-3">🎨 Filters</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-none">Normal</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-grayscale">B&W</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-sepia">Sepia</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-vintage">Vintage</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-brightness">Bright</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-contrast">Contrast</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-cool">Cool</button>
+                        <button class="filter-btn bg-white/20 hover:bg-white/30 text-white py-2 px-3 rounded-lg text-sm transition-all" data-filter="filter-blur">Dreamy</button>
+                    </div>
+                </div>
+                
+                <!-- Camera Status -->
+                <div class="text-center">
+                    <button id="startCamera" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg">
+                        🎥 Start Camera
+                    </button>
+                    <p id="cameraStatus" class="text-white/70 mt-2 text-sm">Click to activate your camera</p>
+                </div>
+            </div>
+            
+            <!-- Gallery Section -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">🖼️ Photo Gallery</h2>
+                    <p class="text-white/80">Your captured memories</p>
+                </div>
+                
+                <!-- Gallery Grid -->
+                <div id="gallery" class="grid grid-cols-2 gap-4 mb-6 max-h-96 overflow-y-auto">
+                    <!-- Sample photos will appear here -->
+                    <div class="text-center text-white/60 col-span-2 py-8">
+                        <div class="text-4xl mb-2">📷</div>
+                        <p>Your photos will appear here!</p>
+                        <p class="text-sm mt-1">Start taking pictures to build your gallery</p>
+                    </div>
+                </div>
+                
+                <!-- Gallery Controls -->
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <button id="downloadAll" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        💾 Download All
+                    </button>
+                    <button id="clearGallery" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        🗑️ Clear Gallery
+                    </button>
+                    <button id="shareGallery" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        📤 Share
+                    </button>
+                </div>
+                
+                <!-- Photo Counter -->
+                <div class="text-center mt-4">
+                    <span id="photoCount" class="text-white/80 text-sm">0 photos captured</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="max-w-4xl mx-auto mt-8 bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+            <h3 class="text-xl font-bold text-white mb-4 text-center">📋 How to Use</h3>
+            <div class="grid md:grid-cols-3 gap-4 text-white/90">
+                <div class="text-center">
+                    <div class="text-3xl mb-2">1️⃣</div>
+                    <h4 class="font-semibold mb-1">Start Camera</h4>
+                    <p class="text-sm">Click "Start Camera" and allow camera access</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl mb-2">2️⃣</div>
+                    <h4 class="font-semibold mb-1">Apply Filters</h4>
+                    <p class="text-sm">Choose from 8 different photo filters</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl mb-2">3️⃣</div>
+                    <h4 class="font-semibold mb-1">Capture & Save</h4>
+                    <p class="text-sm">Click the camera button to take photos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let video, canvas, ctx, currentFilter = 'filter-none';
+        let photos = [];
+        let stream = null;
+        
+        // Initialize elements
+        document.addEventListener('DOMContentLoaded', function() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = 640;
+            canvas.height = 480;
+            
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // Start camera button
+            document.getElementById('startCamera').addEventListener('click', startCamera);
+            
+            // Capture button
+            document.getElementById('captureBtn').addEventListener('click', capturePhoto);
+            
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-white/40'));
+                    // Add active class to clicked button
+                    this.classList.add('bg-white/40');
+                    
+                    currentFilter = this.dataset.filter;
+                    video.className = `w-full h-64 md:h-80 object-cover rounded-2xl bg-gray-800 ${currentFilter}`;
+                });
+            });
+            
+            // Gallery controls
+            document.getElementById('downloadAll').addEventListener('click', downloadAllPhotos);
+            document.getElementById('clearGallery').addEventListener('click', clearGallery);
+            document.getElementById('shareGallery').addEventListener('click', shareGallery);
+        }
+        
+        async function startCamera() {
+            try {
+                document.getElementById('cameraStatus').textContent = 'Starting camera...';
+                
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                
+                video.srcObject = stream;
+                video.style.display = 'block';
+                canvas.style.display = 'none';
+                
+                document.getElementById('startCamera').textContent = '🔄 Restart Camera';
+                document.getElementById('startCamera').className = 'bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg';
+                document.getElementById('cameraStatus').textContent = 'Camera active - Ready to capture!';
+                
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                document.getElementById('cameraStatus').textContent = 'Camera access denied or not available';
+                document.getElementById('cameraStatus').className = 'text-red-300 mt-2 text-sm';
+            }
+        }
+        
+        function capturePhoto() {
+            if (!stream) {
+                alert('Please start the camera first!');
+                return;
+            }
+            
+            // Flash effect
+            const flashEffect = document.getElementById('flashEffect');
+            flashEffect.classList.add('flash-animation');
+            setTimeout(() => flashEffect.classList.remove('flash-animation'), 300);
+            
+            // Capture the photo
+            ctx.filter = getFilterCSS(currentFilter);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL
+            const photoData = canvas.toDataURL('image/png');
+            
+            // Add to photos array
+            const photo = {
+                id: Date.now(),
+                data: photoData,
+                filter: currentFilter,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            photos.push(photo);
+            updateGallery();
+            updatePhotoCount();
+            
+            // Show success message briefly
+            const originalStatus = document.getElementById('cameraStatus').textContent;
+            document.getElementById('cameraStatus').textContent = '✅ Photo captured!';
+            document.getElementById('cameraStatus').className = 'text-green-300 mt-2 text-sm';
+            
+            setTimeout(() => {
+                document.getElementById('cameraStatus').textContent = originalStatus;
+                document.getElementById('cameraStatus').className = 'text-white/70 mt-2 text-sm';
+            }, 2000);
+        }
+        
+        function getFilterCSS(filterClass) {
+            const filterMap = {
+                'filter-none': 'none',
+                'filter-grayscale': 'grayscale(100%)',
+                'filter-sepia': 'sepia(100%)',
+                'filter-blur': 'blur(2px)',
+                'filter-brightness': 'brightness(150%)',
+                'filter-contrast': 'contrast(150%)',
+                'filter-vintage': 'sepia(50%) contrast(120%) brightness(110%)',
+                'filter-cool': 'hue-rotate(180deg) saturate(120%)'
+            };
+            return filterMap[filterClass] || 'none';
+        }
+        
+        function updateGallery() {
+            const gallery = document.getElementById('gallery');
+            
+            if (photos.length === 0) {
+                gallery.innerHTML = `
+                    <div class="text-center text-white/60 col-span-2 py-8">
+                        <div class="text-4xl mb-2">📷</div>
+                        <p>Your photos will appear here!</p>
+                        <p class="text-sm mt-1">Start taking pictures to build your gallery</p>
+                    </div>
+                `;
+                // Disable gallery controls
+                document.getElementById('downloadAll').disabled = true;
+                document.getElementById('clearGallery').disabled = true;
+                document.getElementById('shareGallery').disabled = true;
+                return;
+            }
+            
+            // Enable gallery controls
+            document.getElementById('downloadAll').disabled = false;
+            document.getElementById('clearGallery').disabled = false;
+            document.getElementById('shareGallery').disabled = false;
+            
+            gallery.innerHTML = photos.map(photo => `
+                <div class="relative group">
+                    <img src="${photo.data}" alt="Captured photo" class="photo-frame w-full h-32 object-cover rounded-lg">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center">
+                        <div class="flex gap-2">
+                            <button onclick="downloadPhoto('${photo.id}')" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg text-sm">
+                                💾
+                            </button>
+                            <button onclick="deletePhoto('${photo.id}')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg text-sm">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        ${photo.filter.replace('filter-', '').replace('-', ' ')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updatePhotoCount() {
+            const count = photos.length;
+            document.getElementById('photoCount').textContent = `${count} photo${count !== 1 ? 's' : ''} captured`;
+        }
+        
+        function downloadPhoto(photoId) {
+            const photo = photos.find(p => p.id == photoId);
+            if (photo) {
+                const link = document.createElement('a');
+                link.download = `photobooth-${photo.id}.png`;
+                link.href = photo.data;
+                link.click();
+            }
+        }
+        
+        function deletePhoto(photoId) {
+            photos = photos.filter(p => p.id != photoId);
+            updateGallery();
+            updatePhotoCount();
+        }
+        
+        function downloadAllPhotos() {
+            if (photos.length === 0) return;
+            
+            photos.forEach((photo, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = `photobooth-${index + 1}.png`;
+                    link.href = photo.data;
+                    link.click();
+                }, index * 100); // Small delay between downloads
+            });
+        }
+        
+        function clearGallery() {
+            if (confirm('Are you sure you want to delete all photos? This cannot be undone.')) {
+                photos = [];
+                updateGallery();
+                updatePhotoCount();
+            }
+        }
+        
+        function shareGallery() {
+            if (photos.length === 0) return;
+            
+            if (navigator.share) {
+                // Use native sharing if available
+                navigator.share({
+                    title: 'My PhotoBooth Pictures',
+                    text: `Check out my ${photos.length} awesome photobooth pictures!`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('Link copied to clipboard! Share it with your friends.');
+                });
+            }
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977bb8ea91f5f64c',t:'MTc1NjYzNDg2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
